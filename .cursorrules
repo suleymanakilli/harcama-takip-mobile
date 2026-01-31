@@ -1,0 +1,13 @@
+# AI Editor Kuralları - Expo Projeleri (Regl Takip + Harcama Takip)
+
+## 📏 Katı Satır Limitleri (Hard Limits - Her İki Proje İçin)
+Aşan kod reddedilir veya bölünür:
+- **Screen files**: Max 200 satır
+- **Components**: Max 120 satır
+- **Hooks**: Max 60 satır (her useEffect max 10 satır)
+- **Services**: Max 80 satır
+- **Utils**: Max 40 satır (pure functions only)
+- **StyleSheet**: Max 40 satır (nested max 2 seviye)
+- **Type definitions**: Max 100 satır
+
+## 🗂️ Dosya Organizasyonu (Strict)
