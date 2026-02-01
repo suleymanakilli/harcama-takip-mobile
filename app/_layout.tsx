@@ -1,13 +1,38 @@
-// Root Layout (Max 100 satır)
-import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+// Root Layout with Auth Guard (Max 100 satır)
+import { useEffect, useState } from 'react';
+import { Stack, useSegments, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useAuth } from '../src/hooks/useAuth';
+import { View, StyleSheet } from 'react-native';
+import { useStore } from '../src/store/useStore';
 import { colors } from '../src/constants/theme';
 
 export default function RootLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useStore();
+  const segments = useSegments();
+  const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Wait for component to mount before navigating
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const inAuthGroup = segments[0] === 'login';
+
+    // Use setTimeout to ensure navigation happens after render
+    const timer = setTimeout(() => {
+      if (!isAuthenticated && !inAuthGroup) {
+        router.replace('/login');
+      } else if (isAuthenticated && inAuthGroup) {
+        router.replace('/');
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, segments, isMounted]);
 
   return (
     <View style={styles.container}>
@@ -52,4 +77,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 });
-

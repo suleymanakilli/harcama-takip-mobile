@@ -1,11 +1,11 @@
 // Dashboard Screen (Max 200 satır)
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView 
 } from 'react-native';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuth } from '../src/hooks/useAuth';
+import { useStore } from '../src/store/useStore';
 import { useDashboard } from '../src/hooks/useDashboard';
 import { useTransactions } from '../src/hooks/useTransactions';
 import { useCategories } from '../src/hooks/useCategories';
@@ -17,20 +17,14 @@ import { AddTransactionModal } from '../src/components/AddTransactionModal';
 import { colors, spacing, fontSize } from '../src/constants/theme';
 import type { TransactionType } from '../src/types';
 
-const BUDGET_LIMIT = 10000; // Default monthly budget
+const BUDGET_LIMIT = 10000;
 
 export default function DashboardScreen() {
-  const { isAuthenticated, user } = useAuth();
+  const { user, isAuthenticated } = useStore();
   const { stats, categorySummary } = useDashboard(BUDGET_LIMIT);
   const { recentTransactions, create } = useTransactions();
   const { categories, recentCategories, addRecent } = useCategories();
   const [showAddModal, setShowAddModal] = useState(false);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/login');
-    }
-  }, [isAuthenticated]);
 
   const handleAddTransaction = async (
     amount: number, 
@@ -48,7 +42,14 @@ export default function DashboardScreen() {
     setShowAddModal(false);
   };
 
-  if (!isAuthenticated) return null;
+  // Auth guard is handled in _layout.tsx, just show loading if not ready
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.loading}>
+        <Text style={styles.loadingText}>Yükleniyor...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -110,6 +111,13 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  loading: { 
+    flex: 1, 
+    backgroundColor: colors.background, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  loadingText: { color: colors.textSecondary, fontSize: fontSize.md },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -135,4 +143,3 @@ const styles = StyleSheet.create({
   emptyText: { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg },
   bottomSpacer: { height: 80 },
 });
-

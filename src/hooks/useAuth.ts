@@ -1,14 +1,29 @@
 // Auth Hook (Max 60 satır)
-import { useEffect } from 'react';
-import { useGoogleAuth, signInWithGoogle, signOut, onAuthStateChange } from '../services/auth';
+import { useEffect, useState } from 'react';
+import { signInWithGoogle, signOut, onAuthStateChange, getSession } from '../services/auth';
 import { useStore } from '../store/useStore';
 import type { User } from '../types';
 
 export const useAuth = () => {
   const { user, isAuthenticated, setUser, setLoading } = useStore();
-  const { request, response, promptAsync } = useGoogleAuth();
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    // Check initial session
+    getSession().then((session) => {
+      if (session?.user) {
+        const userData = session.user;
+        setUser({
+          id: userData.id,
+          email: userData.email || '',
+          name: userData.user_metadata?.full_name || 'Kullanıcı',
+          avatar_url: userData.user_metadata?.avatar_url,
+        } as User);
+      }
+      setIsReady(true);
+    });
+
+    // Listen for auth changes
     const { data } = onAuthStateChange((session) => {
       if (session) {
         const userData = (session as { user: { id: string; email: string; user_metadata: { full_name?: string; avatar_url?: string } } }).user;
@@ -26,22 +41,23 @@ export const useAuth = () => {
     return () => data.subscription.unsubscribe();
   }, [setUser]);
 
-  useEffect(() => {
-    if (response?.type === 'success' && response.authentication?.idToken) {
-      setLoading(true);
-      signInWithGoogle(response.authentication.idToken)
-        .catch(console.error)
-        .finally(() => setLoading(false));
+  const login = async () => {
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Login error:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [response, setLoading]);
+  };
 
-  const login = () => promptAsync();
   const logout = async () => {
     setLoading(true);
     await signOut();
+    setUser(null);
     setLoading(false);
   };
 
-  return { user, isAuthenticated, login, logout, isGoogleReady: !!request };
+  return { user, isAuthenticated, login, logout, isGoogleReady: isReady };
 };
-
